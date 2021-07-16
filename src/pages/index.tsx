@@ -1,4 +1,3 @@
-import { string } from "prop-types";
 import React, { FormEvent, useState } from "react";
 import { Box } from "../components/Box/styled";
 import { MainGrid } from "../components/MainGrid/styled";
@@ -86,7 +85,7 @@ export default function Home() {
         >
           <ProfileRelationsBoxWrapper>
             <h2 className="smallTitle">
-              Pessoas das comunidades ({comunidades.length})
+              Pessoas das Comunidades ({comunidades.length})
             </h2>
             <ul>
               {comunidades.map((itemAtual) => (
