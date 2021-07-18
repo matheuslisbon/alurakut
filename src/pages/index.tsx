@@ -1,4 +1,5 @@
-import React, { FormEvent, useState } from "react";
+import axios, { AxiosResponse } from "axios";
+import React, { FormEvent, useState, useEffect } from "react";
 import { Box } from "../components/Box/styled";
 import { MainGrid } from "../components/MainGrid/styled";
 import { ProfileRelationsBoxWrapper } from "../components/ProfileRelations/styled";
@@ -6,18 +7,47 @@ import { ProfileSidebar } from "../components/ProfileSidebar";
 
 import { AlurakutMenu, OrkutNostalgicIconSet } from "../lib/AlurakutCommons";
 
-type ComunidadeProps = {
-  id: string;
-  title: string;
-  image: string;
-};
-
 export default function Home() {
   const user = "matheuslisbon";
   const pessoasFavoritas = ["juunegreiros", "omariosouto", "peas"];
-  const [comunidades, setComunidades] = useState<ComunidadeProps[]>([]);
+  const [comunidades, setComunidades] = useState([]);
   const [inputComunidadeTitle, setInputComunidadeTitle] = useState("");
+  const [seguidores, setSeguidores] = useState([]);
   const [inputComunidadeImage, setInputComunidadeImage] = useState("");
+
+  useEffect(() => {
+    async function getDataApi() {
+      await axios
+        .get<AxiosResponse[]>(
+          "https://api.github.com/users/matheuslisbon/followers"
+        )
+        .then((response) => setSeguidores(response.data));
+    }
+    async function postGraphQL() {
+      axios({
+        method: "post",
+        url: "https://graphql.datocms.com/",
+        data: JSON.stringify({
+          query: `query {
+	allCommunities {
+    title
+    id
+    imageUrl
+  }
+}`,
+        }),
+        headers: {
+          Authorization: "2d747fc87647abae2ed739be24c765",
+          "Content-Type": "aplication/json",
+          Accept: "aplication/json",
+        },
+      }).then(({ data }) => setComunidades(data.data.allCommunities));
+    }
+
+    postGraphQL();
+
+    getDataApi();
+  }, []);
 
   function handleSubmitForm(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -27,11 +57,22 @@ export default function Home() {
     }
     const comunidade = {
       title: inputComunidadeTitle,
-      image: inputComunidadeImage,
-      id: new Date().toDateString(),
+      imageUrl: inputComunidadeImage,
     };
 
-    setComunidades([...comunidades, comunidade]);
+    fetch("/api/comunidades", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(comunidade),
+    }).then(async (response) => {
+      const dados = await response.json();
+      console.log(dados.registroCriado);
+      const comunidade = dados.registroCriado;
+      const comunidadesAtualizadas = [...comunidades, comunidade];
+      setComunidades(comunidadesAtualizadas);
+    });
   }
 
   return (
@@ -84,14 +125,28 @@ export default function Home() {
           style={{ gridArea: "profileRelationsArea" }}
         >
           <ProfileRelationsBoxWrapper>
+            <h2 className="smallTitle">Seguidores ({seguidores.length})</h2>
+            <ul>
+              {seguidores.map((itemAtual) => (
+                <li key={itemAtual.login}>
+                  <a href={`/users/${itemAtual.login}`} key={itemAtual.login}>
+                    <img src={`https://github.com/${itemAtual.login}.png`} />
+                    <span>{itemAtual.login}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </ProfileRelationsBoxWrapper>
+
+          <ProfileRelationsBoxWrapper>
             <h2 className="smallTitle">
               Pessoas das Comunidades ({comunidades.length})
             </h2>
             <ul>
               {comunidades.map((itemAtual) => (
                 <li key={itemAtual.id}>
-                  <a href={`/users/${itemAtual.title}`} key={itemAtual.id}>
-                    <img src={`https://github.com/${itemAtual.image}.png`} />
+                  <a href={`/comunities/${itemAtual.id}`} key={itemAtual.id}>
+                    <img src={itemAtual.imageUrl} />
                     <span>{itemAtual.title}</span>
                   </a>
                 </li>
