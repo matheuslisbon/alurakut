@@ -1,6 +1,8 @@
 import React from "react";
 import styled, { css } from "styled-components";
 import NextLink from "next/link";
+import nookies from "nookies";
+import { useRouter } from "next/router";
 
 const BASE_URL = "http://alurakut.vercel.app/";
 const v = "1";
@@ -17,6 +19,7 @@ function Link({ href, children, ...props }) {
 // Menu
 // ================================================================================================================
 export function AlurakutMenu({ githubUser }) {
+  const router = useRouter();
   const [isMenuOpen, setMenuState] = React.useState(false);
   return (
     <AlurakutMenu.Wrapper isMenuOpen={isMenuOpen}>
@@ -29,17 +32,21 @@ export function AlurakutMenu({ githubUser }) {
             { name: "Amigos", slug: "/amigos" },
             { name: "Comunidades", slug: "/comunidades" },
           ].map((menuItem) => (
-            <Link
-              key={`key__${menuItem.name.toLocaleLowerCase()}`}
-              href={`${menuItem.slug.toLocaleLowerCase()}`}
-            >
+            <Link key={`key__${menuItem.name.toLocaleLowerCase()}`} href="/">
               {menuItem.name}
             </Link>
           ))}
         </nav>
 
         <nav>
-          <a href={`/logout`}>Sair</a>
+          <a
+            onClick={() => {
+              nookies.destroy(null, "USER_TOKEN");
+              router.push("/login");
+            }}
+          >
+            sair
+          </a>
           <div>
             <input placeholder="Pesquisar no Orkut" />
           </div>
@@ -177,9 +184,7 @@ function AlurakutMenuProfileSidebar({ githubUser }) {
         />
         <hr />
         <p>
-          <a className="boxLink" href={`/user/${githubUser}`}>
-            @{githubUser}
-          </a>
+          <a className="boxLink">@{githubUser}</a>
         </p>
         <hr />
 
@@ -193,35 +198,40 @@ function AlurakutMenuProfileSidebar({ githubUser }) {
 // AlurakutProfileSidebarMenuDefault
 // ================================================================================================================
 export function AlurakutProfileSidebarMenuDefault() {
+  const router = useRouter();
   return (
     <AlurakutProfileSidebarMenuDefault.Wrapper>
       <nav>
-        <a href="/">
+        <a>
           <img src={`${BASE_URL}/icons/user.svg`} />
           Perfil
         </a>
-        <a href="/">
+        <a>
           <img src={`${BASE_URL}/icons/book.svg`} />
           Recados
         </a>
-        <a href="/">
+        <a>
           <img src={`${BASE_URL}/icons/camera.svg`} />
           Fotos
         </a>
-        <a href="/">
+        <a>
           <img src={`${BASE_URL}/icons/sun.svg`} />
           Depoimentos
         </a>
       </nav>
       <hr />
       <nav>
-        <a href="/">
+        <a>
           <img src={`${BASE_URL}/icons/plus.svg`} />
           GitHub Trends
         </a>
-        <a href="/logout">
-          <img src={`${BASE_URL}//icons/logout.svg`} />
-          Sair
+        <a
+          onClick={() => {
+            nookies.destroy(null, "USER_TOKEN");
+            router.push("/login");
+          }}
+        >
+          sair
         </a>
       </nav>
     </AlurakutProfileSidebarMenuDefault.Wrapper>

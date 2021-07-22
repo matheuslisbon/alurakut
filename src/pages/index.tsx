@@ -1,16 +1,19 @@
 import axios, { AxiosResponse } from "axios";
-import React, { FormEvent, useState, useEffect } from "react";
+import React, { FormEvent, useState, useEffect, useContext } from "react";
+import router, { useRouter } from "next/router";
 import { Box } from "../components/Box/styled";
 import { MainGrid } from "../components/MainGrid/styled";
 import { ProfileRelationsBoxWrapper } from "../components/ProfileRelations/styled";
 import { ProfileSidebar } from "../components/ProfileSidebar";
 import nookies from "nookies";
-import jwt from "jsonwebtoken";
 
 import { AlurakutMenu, OrkutNostalgicIconSet } from "../lib/AlurakutCommons";
+import { AuthContext } from "../contexts/AuthContext";
 
-export default function Home(props) {
-  const user = props.githubUser;
+export default function Home() {
+  const router = useRouter();
+  const { setUser, user } = useContext(AuthContext);
+  const [userSaved, setUserSaved] = useState("");
   const pessoasFavoritas = ["juunegreiros", "omariosouto", "peas"];
   const [comunidades, setComunidades] = useState([]);
   const [inputComunidadeTitle, setInputComunidadeTitle] = useState("");
@@ -21,7 +24,7 @@ export default function Home(props) {
     async function getDataApi() {
       await axios
         .get<AxiosResponse[]>(
-          "https://api.github.com/users/matheuslisbon/followers"
+          `https://api.github.com/users/${user.username}/followers`
         )
         .then((response) => setSeguidores(response.data));
     }
@@ -45,9 +48,7 @@ export default function Home(props) {
         },
       }).then(({ data }) => setComunidades(data.data.allCommunities));
     }
-
     postGraphQL();
-
     getDataApi();
   }, []);
 
@@ -79,10 +80,10 @@ export default function Home(props) {
 
   return (
     <>
-      <AlurakutMenu githubUser={user} />
+      <AlurakutMenu githubUser={user.username} />
       <MainGrid>
         <div className="profileArea" style={{ gridArea: "profileArea" }}>
-          <ProfileSidebar gitHubUser={user} />
+          <ProfileSidebar gitHubUser={user.username} />
         </div>
 
         <div className="welcomeArea" style={{ gridArea: "welcomeArea" }}>
@@ -93,7 +94,6 @@ export default function Home(props) {
 
           <Box>
             <h2 className="subTitle">Oque você deseja fazer ? </h2>
-
             <form onSubmit={(e) => handleSubmitForm(e)}>
               <div>
                 <input
@@ -179,17 +179,9 @@ export default function Home(props) {
 
 export async function getServerSideProps(context) {
   const cookies = nookies.get(context);
-  const token = cookies.USER_TOKEN;
-  const { isAuthenticated } = await fetch(
-    "https://alurakut.vercel.app/api/auth",
-    {
-      headers: {
-        Authorization: token,
-      },
-    }
-  ).then((resposta) => resposta.json());
+  const token = cookies.NAME_USER;
 
-  if (!isAuthenticated) {
+  if (!token) {
     return {
       redirect: {
         destination: "/login",
@@ -198,10 +190,7 @@ export async function getServerSideProps(context) {
     };
   }
 
-  const { githubUser } = jwt.decode(token);
   return {
-    props: {
-      githubUser,
-    }, // will be passed to the page component as props
+    props: {}, // will
   };
 }

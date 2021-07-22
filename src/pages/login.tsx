@@ -1,11 +1,28 @@
-import React from "react";
+import React, { useContext } from "react";
 // Hook do NextJS
 import { useRouter } from "next/router";
+import { auth, firebase } from "../services/firebase";
 import nookies from "nookies";
+import { AuthContext } from "../contexts/AuthContext";
 
 export default function LoginScreen() {
   const router = useRouter();
-  const [githubUser, setGithubUser] = React.useState("matheuslisbon");
+  const { setUser } = useContext(AuthContext);
+
+  async function signInWithGithub() {
+    const provider = new firebase.auth.GithubAuthProvider();
+
+    const result = await auth.signInWithPopup(provider);
+
+    if (result.additionalUserInfo) {
+      setUser(result.additionalUserInfo);
+      nookies.set(null, "NAME_USER", result.additionalUserInfo.username, {
+        path: "/",
+        maxAge: 86400 * 7,
+      });
+      router.push("/");
+    }
+  }
 
   return (
     <main
@@ -35,42 +52,14 @@ export default function LoginScreen() {
         </section>
 
         <section className="formArea">
-          <form
-            className="box"
-            onSubmit={(infosDoEvento) => {
-              infosDoEvento.preventDefault();
-              // alert('Alguém clicou no botão!')
-              console.log("Usuário: ", githubUser);
-              fetch("https://alurakut.vercel.app/api/login", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ githubUser: githubUser }),
-              }).then(async (respostaDoServer) => {
-                const dadosDaResposta = await respostaDoServer.json();
-                const token = dadosDaResposta.token;
-                nookies.set(null, "USER_TOKEN", token, {
-                  path: "/",
-                  maxAge: 86400 * 7,
-                });
-                router.push("/");
-              });
-            }}
-          >
+          <div className="box">
             <p>
               Acesse agora mesmo com seu usuário do <strong>GitHub</strong>!
             </p>
-            <input
-              placeholder="Usuário"
-              value={githubUser}
-              onChange={(evento) => {
-                setGithubUser(evento.target.value);
-              }}
-            />
-            {githubUser.length === 0 ? "Preencha o campo" : ""}
-            <button type="submit">Login</button>
-          </form>
+            <button onClick={() => signInWithGithub()}>
+              Login com seu gitHub
+            </button>
+          </div>
 
           <footer className="box">
             <p>
